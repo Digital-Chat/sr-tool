@@ -9112,9 +9112,16 @@ target="_blank" data-title="Fixed Voice SR Follow Up->Check availiabilty->Violat
             ]
         }
     };
+
+
+
+
+
+
+	
     // --- END: TAGS TOOL DATA ---
     
-    // Map to store original links to ensure the service number is updated correctly on click.
+// Map to store original links to ensure the service number is updated correctly on click.
     const originalLinks = new Map();
 
     // --- NEW: Performance optimization for search ---
@@ -9186,6 +9193,49 @@ target="_blank" data-title="Fixed Voice SR Follow Up->Check availiabilty->Violat
                 searchResults.style.display = 'none';
             }
         });
+
+        // #################### START: Anti-Theft Script ####################
+        
+        // 1. Disable Right-click
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        // 2. Disable common developer keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.keyCode == 123 || // F12
+                (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) || // Ctrl+Shift+I
+                (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) || // Ctrl+Shift+C
+                (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) || // Ctrl+Shift+J
+                (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0))) { // Ctrl+U
+                e.preventDefault();
+            }
+        });
+
+        // 3. Detect Developer Tools opening and act (Corrected and Stable Version)
+        const antiDebug = () => {
+            function check() {
+                // A reliable way to check for dev tools is to compare window dimensions.
+                const threshold = 160;
+                const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+                const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+
+                if (widthThreshold || heightThreshold) {
+                    // If the difference is significant, it's very likely dev tools are open.
+                    // This action will run only when dev tools are actually open.
+                    window.location.href = 'about:blank';
+                }
+            }
+
+            // Run the check periodically.
+            setInterval(check, 1000);
+
+            // Also run the check when the window is resized, as this happens when dev tools are opened/closed.
+            window.addEventListener('resize', check);
+        };
+
+        // Run the anti-theft function
+        antiDebug();
+        
+        // ####################  END: Anti-Theft Script  ####################
     });
 
     /**
@@ -9202,8 +9252,6 @@ target="_blank" data-title="Fixed Voice SR Follow Up->Check availiabilty->Violat
     
         e.preventDefault();
     
-        // If the link is not in the map (i.e., it's a dynamic search result),
-        // its own href is the original one we need to modify.
         let originalHref = originalLinks.get(link);
         if (!originalHref) {
             originalHref = link.href;
@@ -9221,9 +9269,18 @@ target="_blank" data-title="Fixed Voice SR Follow Up->Check availiabilty->Violat
             (link.closest('.tab') && link.closest('.tab').id === 'tab3') ||
             link.dataset.sourceTab === 'tab3'
         );
-    
+
+        const isForcedTab2Context = link.dataset.sourceTab === 'tab2';
+
         let finalSubsNumber;
-        if (isFixedVoiceContext) {
+
+        if (isForcedTab2Context) {
+            let numberPart = outputResultText.replace('FBB', '');
+            finalSubsNumber = 'FBB' + numberPart;
+            if (finalSubsNumber === 'FBB') {
+                finalSubsNumber = 'FBB0';
+            }
+        } else if (isFixedVoiceContext) {
             finalSubsNumber = outputResultText.replace('FBB', '') || '0';
         } else {
             if (outputResultText === '' || outputResultText === 'FBB') {
@@ -10304,10 +10361,11 @@ target="_blank" data-title="Fixed Voice SR Follow Up->Check availiabilty->Violat
     }
 
 
+    // #################### START: التعديل الأخير الذي طلبته ####################
     /**
      * @function addSmartSpacing
-     * @description Main function called by the button. It handles selection logic
-     * and calls the transformer function.
+     * @description Main function called by the button. It handles selection logic,
+     * calls the transformer function, and re-selects the modified text.
      */
     function addSmartSpacing() {
         const textarea = document.getElementById('canned-space-textarea');
@@ -10324,16 +10382,27 @@ target="_blank" data-title="Fixed Voice SR Follow Up->Check availiabilty->Violat
 
         const formattedText = transformTextForSpacing(textToProcess);
         
-        // Apply the changes
         if (isSelection) {
-            document.execCommand('insertText', false, formattedText);
+            // 1. Manually update the textarea's value
+            textarea.value = textarea.value.substring(0, start) + formattedText + textarea.value.substring(end);
+
+            // 2. Calculate the new end position for the selection
+            const newEnd = start + formattedText.length;
+
+            // 3. Re-select the newly inserted text
+            textarea.focus(); // Ensure the textarea is active to show the selection
+            textarea.setSelectionRange(start, newEnd);
+
         } else {
+            // If no text was selected, just replace the whole content (old behavior)
             textarea.value = formattedText;
         }
 
         showUnifiedNotification('تمت إضافة المسافات بنجاح!');
         textarea.dispatchEvent(new Event('input', { bubbles: true }));
     }
+    // ####################  END: التعديل الأخير الذي طلبته  ####################
+
 
     /**
      * @function initializeCannedSpace
