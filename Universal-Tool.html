@@ -9194,53 +9194,52 @@ target="_blank" data-title="Fixed Voice SR Follow Up->Check availiabilty->Violat
             }
         });
 
-        // #################### START: Anti-Theft Script ####################
-        
-        // 1. Disable Right-click
-        document.addEventListener('contextmenu', event => event.preventDefault());
+		// #################### START: Anti-Theft Script (FINAL ROBUST VERSION) ####################
 
-        // 2. Disable common developer keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            if (e.keyCode == 123 || // F12
-                (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) || // Ctrl+Shift+I
-                (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) || // Ctrl+Shift+C
-                (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) || // Ctrl+Shift+J
-                (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0))) { // Ctrl+U
-                e.preventDefault();
-            }
-        });
+// 1. Disable Right-click
+document.addEventListener('contextmenu', event => event.preventDefault());
 
-       // 3. Detect Developer Tools opening and act (This version works everywhere)
+// 2. Disable common developer keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    if (e.keyCode == 123 || // F12
+        (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) || // Ctrl+Shift+I
+        (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) || // Ctrl+Shift+J
+        (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0))) { // Ctrl+U
+        e.preventDefault();
+    }
+});
+
+// 3. Detect Developer Tools opening and act (The most reliable method)
 const antiDebug = () => {
-    const devtools = { open: false };
-    const element = document.createElement('div');
-    
-    Object.defineProperty(element, 'id', {
-        get: () => {
-            // This 'get' function is only called when the browser tries to inspect the element,
-            // which happens when dev tools are open.
-            devtools.open = true;
-        }
-    });
-
-    setInterval(() => {
-        devtools.open = false;
-        // The console.log triggers the check.
-        console.log(element);
-        // We clear the console to keep it clean for the user.
-        console.clear(); 
+    // This is a self-calling function that continuously checks for the debugger.
+    (function check() {
+        // The core detection logic from your original code.
+        const threshold = 160;
+        const startTime = new Date();
         
-        if (devtools.open) {
-            // If devtools.open became true, it means they were opened.
+        // This is the most effective way to detect if dev tools are open.
+        debugger; 
+        
+        const endTime = new Date();
+
+        // If the time difference is significant, it means the 'debugger' line was processed.
+        if (endTime.getTime() - startTime.getTime() > threshold) {
+            // Redirect immediately.
             window.location.href = 'about:blank';
         }
-    }, 1000);
+
+        // Use requestAnimationFrame for a more efficient and harder-to-block loop.
+        requestAnimationFrame(check);
+    })();
 };
 
 // Run the anti-theft function
 antiDebug();
-        
-        // ####################  END: Anti-Theft Script  ####################
+
+// ####################  END: Anti-Theft Script  ####################
+
+
+		
     });
 
     /**
