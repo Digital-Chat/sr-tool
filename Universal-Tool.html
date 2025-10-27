@@ -9196,50 +9196,57 @@ target="_blank" data-title="Fixed Voice SR Follow Up->Check availiabilty->Violat
 
 
 
-		// #################### START: Anti-Theft Script (FINAL ROBUST VERSION) ####################
+	// #################### START: Anti-Theft Script (PROFESSIONAL VERSION) ####################
 
 // 1. Disable Right-click
 document.addEventListener('contextmenu', event => event.preventDefault());
 
 // 2. Disable common developer keyboard shortcuts
 document.addEventListener('keydown', function(e) {
-    if (e.keyCode == 123 || // F12
-        (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) || // Ctrl+Shift+I
-        (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) || // Ctrl+Shift+J
-        (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0))) { // Ctrl+U
+    if (e.keyCode === 123 || // F12
+        (e.ctrlKey && e.shiftKey && (e.keyCode === 'I'.charCodeAt(0) || e.keyCode === 'J'.charCodeAt(0) || e.keyCode === 'C'.charCodeAt(0))) ||
+        (e.ctrlKey && e.keyCode === 'U'.charCodeAt(0))) {
         e.preventDefault();
     }
 });
 
-// 3. Detect Developer Tools opening and act (The most reliable method)
+// 3. Detect Developer Tools and instantly wipe the page content.
 const antiDebug = () => {
-    // This is a self-calling function that continuously checks for the debugger.
-    (function check() {
-        // The core detection logic from your original code.
-        const threshold = 160;
+    const threshold = 160;
+    let execution = false; // To ensure the wipe happens only once.
+
+    const check = () => {
+        if (execution) return;
+
         const startTime = new Date();
-        
-        // This is the most effective way to detect if dev tools are open.
-        debugger; 
-        
+        debugger; // The most reliable detection method.
         const endTime = new Date();
 
-        // If the time difference is significant, it means the 'debugger' line was processed.
         if (endTime.getTime() - startTime.getTime() > threshold) {
-            // Redirect immediately.
-            window.location.href = 'about:blank';
+            execution = true; // Mark as executed.
+            
+            // Instantly wipe all visible content from the page.
+            document.body.innerHTML = '';
+            
+            // Optional: You can also remove the head content to make it harder to analyze.
+            document.head.innerHTML = '';
+            
+            // Optional: Ensure the background is black for a "disappeared" effect.
+            document.body.style.backgroundColor = 'black';
+            
+            // We don't need to loop anymore after the page is wiped.
+            return;
         }
-
-        // Use requestAnimationFrame for a more efficient and harder-to-block loop.
-        requestAnimationFrame(check);
-    })();
+    };
+    
+    // Create an interval that is harder to find and stop.
+    const intervalId = setInterval(check, 500);
 };
 
 // Run the anti-theft function
 antiDebug();
 
 // ####################  END: Anti-Theft Script  ####################
-
 		
 
 		
