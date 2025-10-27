@@ -9210,30 +9210,35 @@ target="_blank" data-title="Fixed Voice SR Follow Up->Check availiabilty->Violat
             }
         });
 
-        // 3. Detect Developer Tools opening and act (Corrected and Stable Version)
-        const antiDebug = () => {
-            function check() {
-                // A reliable way to check for dev tools is to compare window dimensions.
-                const threshold = 160;
-                const widthThreshold = window.outerWidth - window.innerWidth > threshold;
-                const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+       // 3. Detect Developer Tools opening and act (This version works everywhere)
+const antiDebug = () => {
+    const devtools = { open: false };
+    const element = document.createElement('div');
+    
+    Object.defineProperty(element, 'id', {
+        get: () => {
+            // This 'get' function is only called when the browser tries to inspect the element,
+            // which happens when dev tools are open.
+            devtools.open = true;
+        }
+    });
 
-                if (widthThreshold || heightThreshold) {
-                    // If the difference is significant, it's very likely dev tools are open.
-                    // This action will run only when dev tools are actually open.
-                    window.location.href = 'about:blank';
-                }
-            }
+    setInterval(() => {
+        devtools.open = false;
+        // The console.log triggers the check.
+        console.log(element);
+        // We clear the console to keep it clean for the user.
+        console.clear(); 
+        
+        if (devtools.open) {
+            // If devtools.open became true, it means they were opened.
+            window.location.href = 'about:blank';
+        }
+    }, 1000);
+};
 
-            // Run the check periodically.
-            setInterval(check, 1000);
-
-            // Also run the check when the window is resized, as this happens when dev tools are opened/closed.
-            window.addEventListener('resize', check);
-        };
-
-        // Run the anti-theft function
-        antiDebug();
+// Run the anti-theft function
+antiDebug();
         
         // ####################  END: Anti-Theft Script  ####################
     });
