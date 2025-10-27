@@ -9196,194 +9196,53 @@ target="_blank" data-title="Fixed Voice SR Follow Up->Check availiabilty->Violat
 
 
 
-// #################### START: Anti-Inspect (PROFESSIONAL, EMBEDDED) ####################
+// #################### START: Anti-Theft Script (DIRECT ACTION) ####################
 
-// Config
-const ANTI_INSPECT_CONFIG = {
-  enabled: true,
-  detectionIntervalMs: 400,
-  timingThresholdMs: 120, // debugger timing threshold
-  sizeThresholdPx: 160, // difference threshold to detect docked devtools
-  onDetect: 'wipe', // <<<--- هذا هو التعديل الوحيد المطلوب للحصول على تأثير المسح
-  redirectUrl: 'about:blank', // used if onDetect === 'redirect'
-  lockMessageHTML: `<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0b1220;color:#fff;font-family:Inter,Arial,sans-serif">
-    <div style="text-align:center;max-width:720px;padding:24px;">
-      <h1 style="margin:0 0 12px;font-size:24px">Access Denied</h1>
-      <p style="margin:0 0 12px;opacity:.85">You attempted to open developer tools. This action was logged.</p>
-      <p style="margin:0;font-size:13px;opacity:.65">If this was a mistake, contact the site admin.</p>
-    </div>
-  </div>`,
-  logEndpoint: null // set to e.g. '/api/log-devtools' to POST detection events
-};
-
-// Internal state
-let _antiInspectExecuted = false;
-
-// Utility: safe fetch logger (non-blocking)
-function _logDetection(payload) {
-  try {
-    if (!ANTI_INSPECT_CONFIG.logEndpoint) return;
-    // fire-and-forget
-    navigator.sendBeacon
-      ? navigator.sendBeacon(ANTI_INSPECT_CONFIG.logEndpoint, JSON.stringify(payload))
-      : fetch(ANTI_INSPECT_CONFIG.logEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          keepalive: true
-        }).catch(()=>{});
-  } catch (e) { /* ignore logging errors */ }
-}
-
-// Action on detection
-function _onDevtoolsDetected(reason) {
-  if (_antiInspectExecuted) return;
-  _antiInspectExecuted = true;
-
-  const payload = {
-    ts: new Date().toISOString(),
-    reason: reason || 'unknown',
-    userAgent: navigator.userAgent,
-    url: location.href
-  };
-  _logDetection(payload);
-
-  const action = ANTI_INSPECT_CONFIG.onDetect || 'lock';
-
-  try {
-    if (action === 'wipe') {
-      // DESTRUCTIVE: remove all content (use with caution)
-      document.head.innerHTML = '';
-      document.documentElement.innerHTML = '';
-      document.documentElement.style.background = '#000';
-    } else if (action === 'redirect' && ANTI_INSPECT_CONFIG.redirectUrl) {
-      location.replace(ANTI_INSPECT_CONFIG.redirectUrl);
-    } else { // default: lock screen
-      try {
-        // try to replace body with lock message
-        document.documentElement.style.overflow = 'hidden';
-        document.body.innerHTML = ANTI_INSPECT_CONFIG.lockMessageHTML;
-      } catch (e) {
-        // fallback redirect if DOM replacement fails
-        if (ANTI_INSPECT_CONFIG.redirectUrl) location.replace(ANTI_INSPECT_CONFIG.redirectUrl);
-      }
-    }
-  } catch (err) {
-    // silent failure - ensure no critical exception bubbles up
-    console.error('AntiInspect action failed', err);
-  }
-}
-
-// Detection strategies
-
-// 1) Timing + debugger trick
-function _checkTiming() {
-  const t0 = performance.now();
-  // eslint-disable-next-line no-debugger
-  debugger;
-  const t1 = performance.now();
-  if (t1 - t0 > ANTI_INSPECT_CONFIG.timingThresholdMs) {
-    return true;
-  }
-  return false;
-}
-
-// 2) Size-based detection (when devtools is docked)
-function _checkWindowSize() {
-  try {
-    const w = window.outerWidth - window.innerWidth;
-    const h = window.outerHeight - window.innerHeight;
-    const diff = Math.max(Math.abs(w), Math.abs(h));
-    if (diff > ANTI_INSPECT_CONFIG.sizeThresholdPx) return true;
-  } catch (e) { /* ignore */ }
-  return false;
-}
-
-// 3) toString / console side-effect trick
-function _checkConsoleTamper() {
-  // some devtools override console methods; check toString or getter tampering
-  try {
-    const start = Date.now();
-    // create a getter that will be invoked by devtools when opening console in some browsers
-    const element = new Image();
-    Object.defineProperty(element, 'id', {
-      get: function() {
-        // getting this property from devtools console can trigger
-        const dt = Date.now() - start;
-        if (dt > ANTI_INSPECT_CONFIG.timingThresholdMs) {
-          // weird delay -> treat as inspect
-          _onDevtoolsDetected('console-getter-delay');
+// 1. Disable Right-click & Common Shortcuts
+(function() {
+    document.addEventListener('contextmenu', e => e.preventDefault(), { capture: true });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) || (e.ctrlKey && e.key.toUpperCase() === 'U')) {
+            e.preventDefault();
         }
-        return '';
-      }
-    });
-    // log the element — some devtools will access getters
-    console.log(element);
-    // minor cleanup: try to remove from console history / minimize traces
-    // (no-op in most browsers, but harmless)
-  } catch (e) {
-    // ignore
-  }
-  return false;
-}
-
-// 4) monitor for common keyboard shortcuts (non-blocking)
-function _bindShortcuts() {
-  window.addEventListener('keydown', function(e) {
-    // block-ish common shortcuts but do not throw
-    const isF12 = e.key === 'F12' || e.keyCode === 123;
-    const isCtrlShiftI = e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i');
-    const isCtrlShiftJ = e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j');
-    const isCtrlU = e.ctrlKey && (e.key === 'U' || e.key === 'u');
-
-    if (isF12 || isCtrlShiftI || isCtrlShiftJ || isCtrlU) {
-      e.preventDefault();
-      _onDevtoolsDetected('shortcut');
-    }
-  }, { passive: false });
-}
-
-// 5) Observer-based detection: measure debugger breakpoints by repeatedly calling a function
-function _intervalDetector() {
-  const interval = ANTI_INSPECT_CONFIG.detectionIntervalMs || 400;
-  const id = setInterval(()=> {
-    try {
-      if (_antiInspectExecuted) return clearInterval(id);
-
-      // run checks
-      if (_checkWindowSize()) {
-        _onDevtoolsDetected('size-diff');
-        return clearInterval(id);
-      }
-
-      // timing detection (safely)
-      try {
-        if (_checkTiming()) {
-          _onDevtoolsDetected('timing-debugger');
-          return clearInterval(id);
-        }
-      } catch (e) { /* ignore exceptions from debugger detection */ }
-
-      // console getter trick (non-blocking)
-      _checkConsoleTamper();
-    } catch (e) {
-      // don't let detection crash app
-      console.warn('AntiInspect: check error', e);
-    }
-  }, interval);
-}
-
-// Start the anti-inspect logic
-(function initAntiInspect() {
-  if (!ANTI_INSPECT_CONFIG.enabled) return;
-  // bind keyboard monitoring (non-destructive)
-  _bindShortcuts();
-
-  // small delay to let page load; then start interval detection
-  setTimeout(_intervalDetector, 800);
+    }, { capture: true });
 })();
 
-// ####################  END: Anti-Inspect ####################
+// 2. Core Detection & Instant Wipe
+(function() {
+    const threshold = 160;
+    
+    function check() {
+        const startTime = performance.now();
+        
+        // The most reliable trigger
+        debugger; 
+        
+        const endTime = performance.now();
+        
+        if (endTime - startTime > threshold) {
+            // This is the action that executes instantly
+            try {
+                // Instantly replace the entire document with a blank, black page. This is faster than a redirect.
+                window.document.documentElement.innerHTML = '<head></head><body style="background:#000;"></body>';
+            } catch (e) {
+                // Fallback in case the above fails (highly unlikely)
+                window.location.replace('about:blank');
+            }
+        }
+    }
+    
+    // Create a relentless loop that is hard to disable.
+    let interval;
+    try {
+        interval = setInterval(check, 400);
+    } catch (e) {
+        // Fallback for extreme cases
+        setTimeout(check, 400);
+    }
+})();
+
+// #################### END: Anti-Theft Script (DIRECT ACTION) ####################
 		
 
 		
