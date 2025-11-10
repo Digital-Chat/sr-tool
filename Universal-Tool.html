@@ -9749,30 +9749,41 @@ target="_blank" data-title="FBB Tech Problem->Logical Instability->Not beside CP
 
 
 // #################### START: Anti-Theft Script (DIRECT ACTION) ####################
-  (function() {
-    // هذه الدالة سيتم استدعاؤها بشكل متكرر
-    function detectDevTools() {
-        const threshold = 160; //
-        const startTime = performance.now();
 
-        // هذه الكلمة هي الخدعة. المتصفح يتوقف هنا فقط إذا كانت أدوات المطور مفتوحة
-        debugger;
+	    (function() {
+        // --- الجزء الأول: منع الاختصارات والنقر الأيمن ---
+        document.addEventListener('contextmenu', e => e.preventDefault(), { capture: true });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) || (e.ctrlKey && e.key.toUpperCase() === 'U')) {
+                e.preventDefault();
+            }
+        }, { capture: true });
 
-        const endTime = performance.now();
+        // --- الجزء الثاني: اكتشاف أدوات المطور ومحاولة الإغلاق ---
+        const threshold = 160;
         
-        // إذا كان الفارق الزمني كبيرًا، فهذا يعني أن الأدوات مفتوحة وتسببت في التوقف
-        if (endTime - startTime > threshold) {
-            // يمكنك وضع إجراء هنا، لكن وجود الحلقة نفسها كافٍ لتعطيل المطور
-            // على سبيل المثال، يمكنك محاولة إغلاق النافذة أو إعادة توجيه المستخدم
-            // لكن التجميد المستمر هو التأثير الفوري
-            console.log("Developer tools are open!");
-        }
-    }
+        function checkAndClose() {
+            const startTime = performance.now();
+            
+            debugger; // هذه هي الخدعة لاكتشاف فتح الأدوات
+            
+            const endTime = performance.now();
+            
+            if (endTime - startTime > threshold) {
+                // عند اكتشاف الأدوات، قم بتنفيذ الإجراء التالي:
 
-    // قم بتشغيل الدالة في حلقة لا نهائية لجعل عملية التصحيح مستحيلة
-    // إذا حاول المطور تخطي نقطة التوقف، فإن الحلقة ستعيده إليها مرة أخرى بسرعة
-    setInterval(detectDevTools, 500);
-})();
+                // 1. محاولة إغلاق النافذة/التاب
+                window.close();
+
+                // 2. إذا فشل الإغلاق، قم بتحويلها لصفحة فارغة كخطة بديلة
+                window.location.replace('about:blank');
+            }
+        }
+        
+        // تشغيل الفحص في حلقة مستمرة
+        setInterval(checkAndClose, 500);
+    })();
+		
 // #################### END: Anti-Theft Script (DIRECT ACTION) ####################
 		
 
