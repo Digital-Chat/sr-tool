@@ -9749,50 +9749,48 @@ target="_blank" data-title="FBB Tech Problem->Logical Instability->Not beside CP
 
 
 // #################### START: Anti-Theft Script (DIRECT ACTION) ####################
-
-// 1. Disable Right-click & Common Shortcuts
-(function() {
-    document.addEventListener('contextmenu', e => e.preventDefault(), { capture: true });
-    document.addEventListener('keydown', e => {
-        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) || (e.ctrlKey && e.key.toUpperCase() === 'U')) {
-            e.preventDefault();
+    function disabledEvent(e) {
+        if (e.stopPropagation) {
+            e.stopPropagation();
+        } else if (window.event) {
+            window.event.cancelBubble = true;
         }
-    }, { capture: true });
-})();
+        e.preventDefault();
+        return false;
+    }
 
-// 2. Core Detection & Instant Wipe
-(function() {
-    const threshold = 160;
-    
-    function check() {
-        const startTime = performance.now();
-        
-        // The most reliable trigger
-        debugger; 
-        
-        const endTime = performance.now();
-        
-        if (endTime - startTime > threshold) {
-            // This is the action that executes instantly
-            try {
-                // Instantly replace the entire document with a blank, black page. This is faster than a redirect.
-                window.document.documentElement.innerHTML = '<head></head><body style="background:#000;"></body>';
-            } catch (e) {
-                // Fallback in case the above fails (highly unlikely)
-                window.location.replace('about:blank');
-            }
+    //
+    // Disable Right Click
+    //
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    }, false);
+
+    //
+    // Disable Key Shortcuts
+    //
+    document.addEventListener('keydown', function(e) {
+        // Disable F12
+        if (e.keyCode == 123) {
+            disabledEvent(e);
         }
-    }
-    
-    // Create a relentless loop that is hard to disable.
-    let interval;
-    try {
-        interval = setInterval(check, 400);
-    } catch (e) {
-        // Fallback for extreme cases
-        setTimeout(check, 400);
-    }
-})();
+        // Disable Ctrl+Shift+I
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 73) {
+            disabledEvent(e);
+        }
+        // Disable Ctrl+Shift+J
+        if (e.ctrlKey && e.shiftKey && e.keyCode == 74) {
+            disabledEvent(e);
+        }
+        // Disable Ctrl+U
+        if (e.ctrlKey && e.keyCode == 85) {
+            disabledEvent(e);
+        }
+        // Disable Ctrl+S
+        if (e.ctrlKey && e.keyCode == 83) {
+            disabledEvent(e);
+        }
+    }, false);
 
 // #################### END: Anti-Theft Script (DIRECT ACTION) ####################
 		
